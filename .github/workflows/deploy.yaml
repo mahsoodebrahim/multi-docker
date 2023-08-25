@@ -1,4 +1,4 @@
-name: Deploy Frontend
+name: Deploy Multi Container App
 on:
   push:
     branches:
@@ -19,7 +19,7 @@ jobs:
           docker build -t dockerfactor75/react-test -f ./client/Dockerfile.dev ./client
           docker run -e CI=true dockerfactor75/react-test npm test
 
-      - name: Build Client Container
+      - name: Build Prod Container
         run: docker build -t dockerfactor75/multi-client ./client
 
       - name: Build Nginx Container
@@ -33,3 +33,10 @@ jobs:
 
       - name: Log into Docker
         run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Push images to docker hub
+        run: |
+          docker push dockerfactor75/multi-client
+          docker push dockerfactor75/multi-nginx
+          docker push dockerfactor75/multi-server
+          docker push dockerfactor75/multi-worker
