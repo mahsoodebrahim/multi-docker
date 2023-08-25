@@ -9,14 +9,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
       - name: Set up Docker
         uses: docker/setup-buildx-action@v1
 
       - name: Build Client Dev Container and Run Tests
-        run: docker build -t dockerfactor75/react-test -f ./client/Dockerfile.dev ./client
-        run: docker run -e CI=true dockerfactor75/react-test npm test
+        run: |
+          docker build -t dockerfactor75/react-test -f ./client/Dockerfile.dev ./client
+          docker run -e CI=true dockerfactor75/react-test npm test
 
       - name: Build Client Container
         run: docker build -t dockerfactor75/multi-client ./client
