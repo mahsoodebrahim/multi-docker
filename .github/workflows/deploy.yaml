@@ -14,21 +14,21 @@ jobs:
       - name: Set up Docker
         uses: docker/setup-buildx-action@v1
 
-      - name: Build Client Dev Container and Run Tests
+      - name: Build Client Dev Image and Run Tests
         run: |
           docker build -t dockerfactor75/react-test -f ./client/Dockerfile.dev ./client
           docker run -e CI=true dockerfactor75/react-test npm test
 
-      - name: Build Prod Container
+      - name: Build Client Image
         run: docker build -t dockerfactor75/multi-client ./client
 
-      - name: Build Nginx Container
+      - name: Build Nginx Image
         run: docker build -t dockerfactor75/multi-nginx ./nginx
 
-      - name: Build Server Container
+      - name: Build Server Image
         run: docker build -t dockerfactor75/multi-server ./server
 
-      - name: Build Worker Container
+      - name: Build Worker Image
         run: docker build -t dockerfactor75/multi-worker ./worker
 
       - name: Log into Docker
@@ -40,3 +40,18 @@ jobs:
           docker push dockerfactor75/multi-nginx
           docker push dockerfactor75/multi-server
           docker push dockerfactor75/multi-worker
+
+      - name: Generate deployment package
+        run: zip -r deploy.zip . -x '*.git*'
+
+      - name: Deploy to EB
+        uses: einaregilsson/beanstalk-deploy@v18
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_KEY }}
+          application_name: my-multi-container-app
+          environment_name: My-multi-container-app-env
+          existing_bucket_name: elasticbeanstalk-us-east-1-234736309150
+          region: us-east-1
+          version_label: ${{ github.sha }}
+          deployment_package: deploy.zip

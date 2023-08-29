@@ -1,74 +1,31 @@
-version: '3'
+version: "3"
 services:
-  nginx:
-    restart: always
-    build:
-      context: ./nginx
-      dockerfile: Dockerfile.dev
-    ports:
-      - "3050:80"
-    depends_on:
-      - api
-      - client
-
-  postgres:
-    image: "postgres:latest"
-    environment:
-      - POSTGRES_PASSWORD=postgres_password
-
-  redis:
-    image: "redis:latest"
-
-  api:
-    build: 
-      context: ./server
-      dockerfile: Dockerfile.dev
-    # ports:
-    #   - "5000:5000"
-    volumes:
-      - /app/node_modules
-      - ./server:/app
-    environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - PGUSER=postgres
-      - PGHOST=postgres
-      - PGDATABASE=postgres
-      - PGPASSWORD=postgres_password
-      - PGPORT=5432
-    depends_on:
-      - redis
-      - postgres
-
   client:
-    build:
-      context: ./client
-      dockerfile: Dockerfile.dev
-    # ports:
-    #   - "3000:3000"
-    volumes:
-      - /app/node_modules
-      - ./client:/app
-    # There is currently an open issue regarding WebSockets:
-    # https://github.com/facebook/create-react-app/issues/11779
-    # This will cause an error to be seen in the browser console:
-    # `WebSocket connection to 'ws://localhost:3000/ws' failed:`
-    # The solution is to set an environment variable on the client
-    # service in the docker-compose.yml: WDS_SOCKET_PORT=0
+    image: "dockerfactor75/multi-client"
+    mem_limit: 128m
+    hostname: client
+  server:
+    image: "dockerfactor75/multi-server"
+    mem_limit: 128m
+    hostname: api
     environment:
-      - WDS_SOCKET_PORT=0
-    depends_on:
-      - api
-
+      - REDIS_HOST=$REDIS_HOST
+      - REDIS_PORT=$REDIS_PORT
+      - PGUSER=$PGUSER
+      - PGHOST=$PGHOST
+      - PGDATABASE=$PGDATABASE
+      - PGPASSWORD=$PGPASSWORD
+      - PGPORT=$PGPORT
   worker:
-    build: 
-      context: ./worker
-      dockerfile: Dockerfile.dev
-    volumes:
-      - /app/node_modules
-      - ./worker:/app
+    image: "dockerfactor75/multi-worker"
+    mem_limit: 128m
+    hostname: worker
     environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-    depends_on:
-      - redis
+      - REDIS_HOST=$REDIS_HOST
+      - REDIS_PORT=$REDIS_PORT
+  nginx:
+    image: "dockerfactor75/multi-nginx"
+    mem_limit: 128m
+    hostname: nginx
+    ports:
+      - "80:80"
